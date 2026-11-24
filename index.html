@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAHIL AI</title>
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  background: #080d1c;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+  padding: 24px 16px 60px;
+  margin: 0;
+}
+h1 {
+  color: #39bfff;
+  margin: 12px 0 6px;
+}
+.sub {
+  color: #b8cde0;
+  font-size: 14px;
+  margin: 0 0 22px;
+}
+.circle {
+  width: 150px;
+  height: 150px;
+  border: 3px solid #39bfff;
+  border-radius: 50%;
+  margin: 18px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 28px #087bff;
+  font-size: 56px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+.circle:active {
+  transform: scale(0.95);
+  background: rgba(8, 123, 255, 0.25);
+}
+.talk-btn {
+  background: #087bff;
+  color: #ffffff;
+  border: none;
+  padding: 15px 28px;
+  border-radius: 30px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+  margin-top: 8px;
+}
+.talk-btn:active {
+  transform: scale(0.96);
+  background: #0663cc;
+}
+#answer {
+  max-width: 560px;
+  margin: 22px auto 12px;
+  color: #70d5ff;
+  font-size: 18px;
+  line-height: 1.5;
+}
+.panel {
+  max-width: 560px;
+  margin: 14px auto;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(57, 191, 255, 0.22);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #dcefff;
+}
+.panel-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #39bfff;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.txt-input {
+  flex: 1;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(57, 191, 255, 0.4);
+  background: #0d162c;
+  color: #ffffff;
+  font-size: 14px;
+}
+.small-btn {
+  padding: 11px 15px;
+  border-radius: 10px;
+  border: none;
+  background: #39bfff;
+  color: #061322;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+}
+a.link-btn {
+  display: inline-block;
+  margin-top: 8px;
+  margin-right: 8px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: #25d366;
+  color: #06140c;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 13px;
+}
+a.link-btn.blue {
+  background: #39bfff;
+  color: #061322;
+}
+a.link-btn.red {
+  background: #ff4d4d;
+  color: #ffffff;
+}
+ul.list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #cfe7fa;
+}
+</style>
+</head>
+<body>
+
+<h1>SAHIL AI</h1>
+<p class="sub">Personal English Voice Assistant • Cinema • Music • Auto Answers</p>
+
+<div class="circle" id="circleBtn" onclick="sahilTap()">S</div>
+
+<button type="button" class="talk-btn" id="micBtn" onclick="sahilTap()">🎤 Talk to SAHIL</button>
+
+<p id="answer">Welcome to Sahil personal assistant</p>
+
+<div class="panel" id="actionBox">
+  <div class="panel-title">Memory &amp; Quick Actions</div>
+  <div><strong>Saved Memory:</strong> Sahil loves all cinema (movies, franchises, series, trilogies, universes) and prefers English.</div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Cinema Watchlist &amp; Notes</div>
+  <ul class="list" id="savedList">
+    <li>Say: "Sahil, add Dune Part Two to my cinema list" or "Sahil, remind me to revise at 7 PM".</li>
+  </ul>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Type or Test Command</div>
+  <div class="row">
+    <input type="text" id="cmdInput" class="txt-input" placeholder="e.g. Sahil how you doing">
+    <button type="button" class="small-btn" onclick="sahilType()">Send</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Optional Gemini API Key</div>
+  <div class="row">
+    <input type="password" id="apiKeyInput" class="txt-input" placeholder="Paste Gemini key (optional)">
+    <button type="button" class="small-btn" onclick="sahilSaveKey()">Save</button>
+  </div>
+  <div id="keyNote" style="font-size:12px; color:#96b4cf; margin-top:6px;">
+    Works automatically with Web Summary + Google link even without a key.
+  </div>
+</div>
+
+<script>
+var answerEl = document.getElementById("answer");
+var actionBox = document.getElementById("actionBox");
+var savedList = document.getElementById("savedList");
+var cmdInput = document.getElementById("cmdInput");
+var apiKeyInput = document.getElementById("apiKeyInput");
+var keyNote = document.getElementById("keyNote");
+
+var WAKE_WORD = "sahil";
+var WELCOME_MSG = "Welcome to Sahil personal assistant";
+var WELCOME_VOICE = "Welcome to Sahil personal assistant, how may I help you?";
+var inChat = false;
+var savedItems = [];
+var apiKey = "";
+var welcomeSpoken = false;
+
+try {
+  savedItems = JSON.parse(localStorage.getItem("sahil_v4_items") || "[]");
+  apiKey = localStorage.getItem("sahil_v4_key") || "";
+} catch (e) {}
+
+if (apiKey) {
+  apiKeyInput.value = apiKey;
+  keyNote.innerText = "Gemini API key saved.";
+}
+
+function renderSaved() {
+  if (!savedItems.length) {
+    savedList.innerHTML = '<li>Say: "Sahil, add Dune Part Two to my cinema list" or "Sahil, remind me to revise at 7 PM".</li>';
+    return;
+  }
+  var h = "";
+  for (var i = 0; i < savedItems.length; i++) {
+    h += "<li><strong>#" + (i + 1) + ":</strong> " + savedItems[i] + "</li>";
+  }
+  savedList.innerHTML = h;
+}
+renderSaved();
+
+function addSaved(val) {
+  savedItems.unshift(val);
+  try {
+    localStorage.setItem("sahil_v4_items", JSON.stringify(savedItems));
+  } catch (e) {}
+  renderSaved();
+}
+
+function setAction(html) {
+  actionBox.innerHTML = '<div class="panel-title">Memory &amp; Quick Actions</div>' + html;
+}
+
+function speak(msg, skipCancel) {
+  answerEl.innerText = msg;
+  if ("speechSynthesis" in window) {
+    try {
+      if (!skipCancel) {
+        window.speechSynthesis.cancel();
+      }
+      var u = new SpeechSynthesisUtterance(msg);
+      u.lang = "en-US";
+      u.rate = 1.0;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+}
+
+function playWelcomeOnce() {
+  answerEl.innerText = WELCOME_MSG;
+  if (welcomeSpoken) return;
+  welcomeSpoken = true;
+  if ("speechSynthesis" in window) {
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(WELCOME_VOICE);
+      u.lang = "en-US";
+      u.rate = 1.0;
+      u.onstart = function() { welcomeSpoken = true; };
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+}
+
+window.addEventListener("DOMContentLoaded", function() {
+  answerEl.innerText = WELCOME_MSG;
+  playWelcomeOnce();
+  setTimeout(function() {
+    if (!welcomeSpoken) {
+      playWelcomeOnce();
+    }
+  }, 400);
+});
+
+document.addEventListener("pointerdown", function() {
+  if (!welcomeSpoken) {
+    playWelcomeOnce();
+  }
+}, { once: true });
+
+function evalMath(text) {
+  var expr = text
+    .replace(/calculate|what is|what's|solve/gi, "")
+    .replace(/plus/gi, "+")
+    .replace(/minus/gi, "-")
+    .replace(/times|multiplied by/gi, "*")
+    .replace(/divided by/gi, "/")
+    .replace(/[^0-9+\-*/().\s]/g, "")
+    .trim();
+  if (!expr || !/\d/.test(expr)) return null;
+  try {
+    var res = Function('"use strict"; return (' + expr + ")")();
+    if (typeof res === "number" && isFinite(res)) {
+      return Number.isInteger(res) ? res : res.toFixed(2);
+    }
+  } catch (e) {}
+  return null;
+}
+
+function askGemini(q) {
+  if (!apiKey) return Promise.resolve(null);
+  var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(apiKey);
+  var prompt = "User Sahil loves all cinema (movies, franchises, series, trilogies, cinematic universes) and wants English only. Answer clearly in 2 to 3 sentences: " + q;
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+  })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(d) {
+      if (d && d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts && d.candidates[0].content.parts[0]) {
+        return d.candidates[0].content.parts[0].text.replace(/\*/g, "").trim();
+      }
+      return null;
+    })
+    .catch(function() { return null; });
+}
+
+function askWiki(q) {
+  var topic = q
+    .replace(/^(search|google|who is|who was|what is|what are|what was|where is|when was|why is|how does|how to|tell me about|explain)\s+/i, "")
+    .replace(/[?.!]+$/g, "")
+    .trim() || q;
+  var sUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" + encodeURIComponent(topic) + "&format=json&origin=*";
+  return fetch(sUrl)
+    .then(function(r) { return r.json(); })
+    .then(function(sd) {
+      var title = sd && sd.query && sd.query.search && sd.query.search[0] ? sd.query.search[0].title : null;
+      if (!title) return null;
+      return fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title)).then(function(res) { return res.json(); });
+    })
+    .then(function(sum) {
+      if (sum && sum.extract) {
+        return sum.extract.split(". ").slice(0, 2).join(". ");
+      }
+      return null;
+    })
+    .catch(function() { return null; });
+}
+
+function autoAnswer(q) {
+  var gUrl = "https://www.google.com/search?q=" + encodeURIComponent(q);
+  answerEl.innerText = "Thinking for Sahil...";
+  askGemini(q).then(function(gemAns) {
+    if (gemAns) {
+      speak(gemAns);
+      setAction('<div><strong>Gemini AI:</strong> ' + gemAns + '</div><a class="link-btn blue" href="' + gUrl + '" target="_blank">Google</a>');
+      return;
+    }
+    askWiki(q).then(function(wikiAns) {
+      if (wikiAns) {
+        speak(wikiAns);
+        setAction('<div><strong>Auto Answer:</strong> ' + wikiAns + '</div><a class="link-btn blue" href="' + gUrl + '" target="_blank">Google</a>');
+      } else {
+        speak("I heard " + q + ", Sahil. Here is the Google search option if you want more details.");
+        setAction('<div><strong>Topic:</strong> ' + q + '</div><a class="link-btn blue" href="' + gUrl + '" target="_blank">Open Google</a>');
+      }
+    });
+  });
+}
+
+function runCommand(raw) {
+  var text = String(raw || "").toLowerCase().trim();
+  if (!text) return;
+
+  if (text.indexOf(WAKE_WORD) === 0) {
+    text = text.replace(/^sahil[,:\s-]*/i, "").trim();
+  }
+
+  if (!text) {
+    inChat = true;
+    speak("Yes Sahil, I am listening. Ask me anything.");
+    return;
+  }
+
+  if (text.indexOf("how you doing") !== -1 || text.indexOf("how are you") !== -1 || text.indexOf("how's it going") !== -1) {
+    inChat = true;
+    speak("Hey Sahil, I am well, how are you?");
+    return;
+  }
+
+  if (text.indexOf("i am good") !== -1 || text.indexOf("i'm good") !== -1 || text.indexOf("i am fine") !== -1 || text.indexOf("i am well") !== -1) {
+    speak("Good to hear that, Sahil! Want to talk about a movie, franchise, or universe, play a song, or ask anything?");
+    return;
+  }
+  if (text.indexOf("bored") !== -1) {
+    speak("Let's fix that, Sahil! Ask me about any cinema universe, tell a joke, or play a song on YouTube or Spotify.");
+    return;
+  }
+  if (text.indexOf("who are you") !== -1) {
+    speak("I am Sahil, your English voice assistant for cinema, music, daily tools, and automatic answers.");
+    return;
+  }
+
+  if (text === "time" || text.indexOf("what time") !== -1 || text.indexOf("current time") !== -1) {
+    speak("Hey Sahil, the time is " + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) + ".");
+    return;
+  }
+  if (text.indexOf("what day") !== -1 || text.indexOf("what is the day") !== -1 || text.indexOf("what's the day") !== -1 || text.indexOf("date") !== -1) {
+    speak("Hey Sahil, today is " + new Date().toDateString() + ".");
+    return;
+  }
+
+  if (text.indexOf("weather") !== -1 || text.indexOf("temperature") !== -1) {
+    answerEl.innerText = "Checking weather for Delhi, Sahil...";
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=28.6139&longitude=77.2090&current=temperature_2m,wind_speed_10m")
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && d.current && typeof d.current.temperature_2m === "number") {
+          speak("Hey Sahil, it is currently " + d.current.temperature_2m + " degrees Celsius in Delhi with wind around " + d.current.wind_speed_10m + " kilometers per hour.");
+        } else {
+          speak("Could not read weather right now, Sahil.");
+        }
+      })
+      .catch(function() {
+        speak("Please check your internet connection for weather, Sahil.");
+      });
+    return;
+  }
+
+  if (text.indexOf("play ") === 0 || text.indexOf("play song") !== -1 || text.indexOf("play music") !== -1) {
+    var song = text
+      .replace(/^play\s+/i, "")
+      .replace(/\bsong\b|\bmusic\b|\bon youtube\b|\bon spotify\b/gi, "")
+      .trim() || "top hits";
+    var yt = "https://m.youtube.com/results?search_query=" + encodeURIComponent(song);
+    var sp = "https://open.spotify.com/search/" + encodeURIComponent(song);
+    var useSpotify = text.indexOf("spotify") !== -1;
+    speak("Playing " + song + " on " + (useSpotify ? "Spotify" : "YouTube") + " for you, Sahil.");
+    setAction(
+      '<div><strong>Track:</strong> ' + song + '</div>' +
+      '<a class="link-btn red" href="' + yt + '" target="_blank">YouTube</a>' +
+      '<a class="link-btn" href="' + sp + '" target="_blank">Spotify</a>'
+    );
+    window.open(useSpotify ? sp : yt, "_blank");
+    return;
+  }
+
+  if (text.indexOf("open ") === 0 || text.indexOf("launch ") === 0) {
+    var target = text.replace(/^(open|launch)\s+/i, "").trim();
+    var appUrl = "https://www.google.com/search?q=" + encodeURIComponent(target);
+    var appLabel = target;
+    if (target.indexOf("youtube") !== -1) { appUrl = "https://m.youtube.com"; appLabel = "YouTube"; }
+    else if (target.indexOf("spotify") !== -1) { appUrl = "https://open.spotify.com"; appLabel = "Spotify"; }
+    else if (target.indexOf("whatsapp") !== -1) { appUrl = "https://wa.me/"; appLabel = "WhatsApp"; }
+    else if (target.indexOf("instagram") !== -1) { appUrl = "https://www.instagram.com"; appLabel = "Instagram"; }
+    else if (target.indexOf("maps") !== -1) { appUrl = "https://maps.google.com"; appLabel = "Google Maps"; }
+    else if (target.indexOf("gmail") !== -1) { appUrl = "https://mail.google.com"; appLabel = "Gmail"; }
+
+    speak("Opening " + appLabel + " for you, Sahil.");
+    setAction('<div><strong>Opening:</strong> ' + appLabel + '</div><a class="link-btn blue" href="' + appUrl + '" target="_blank">Open ' + appLabel + '</a>');
+    window.open(appUrl, "_blank");
+    return;
+  }
+
+  if (text.indexOf("whatsapp") !== -1) {
+    var numMatch = text.replace(/\s+/g, "").match(/\+?\d{7,15}/);
+    var phone = numMatch ? numMatch[0].replace(/[^\d]/g, "") : "";
+    var sayPart = text.match(/(?:saying|message|text)\s+(.+)$/i);
+    var msgText = sayPart ? sayPart[1].trim() : "";
+    var waLink = phone
+      ? "https://wa.me/" + phone + (msgText ? "?text=" + encodeURIComponent(msgText) : "")
+      : (msgText ? "https://wa.me/?text=" + encodeURIComponent(msgText) : "https://wa.me/");
+
+    speak("WhatsApp option is ready for you, Sahil.");
+    setAction('<div><strong>WhatsApp:</strong> ' + (phone || "Chats") + '</div><a class="link-btn" href="' + waLink + '" target="_blank">Open WhatsApp</a>');
+    return;
+  }
+
+  if (text.indexOf("pick up") !== -1 || text.indexOf("answer call") !== -1) {
+    speak("Call picked up, Sahil.");
+    setAction("<div><strong>Call Status:</strong> Active call.</div>");
+    return;
+  }
+  if (text.indexOf("cut call") !== -1 || text.indexOf("hang up") !== -1 || text.indexOf("end call") !== -1) {
+    speak("Call ended, Sahil.");
+    setAction("<div><strong>Call Status:</strong> Call disconnected.</div>");
+    return;
+  }
+  if (text.indexOf("call ") === 0 || text === "call") {
+    var cMatch = text.replace(/\s+/g, "").match(/\+?\d{7,15}/);
+    var cPhone = cMatch ? cMatch[0] : "";
+    speak(cPhone ? ("Dialing " + cPhone + ", Sahil.") : ("Opening dialer, Sahil."));
+    setAction('<a class="link-btn blue" href="tel:' + cPhone + '">Call ' + (cPhone || "Dialer") + '</a>');
+    return;
+  }
+
+  if (text.indexOf("cinema list") !== -1 || text.indexOf("watchlist") !== -1 || text.indexOf("leave a message") !== -1 || text.indexOf("leave message") !== -1 || text.indexOf("remind me") !== -1 || text.indexOf("add ") === 0) {
+    var note = text
+      .replace(/^(add|leave a message|leave message|remind me to|remind me)\s*/i, "")
+      .replace(/\s*(to my cinema list|to my watchlist|to cinema list|to watchlist)$/i, "")
+      .trim() || "Saved item";
+    addSaved(note);
+    speak("Saved for you, Sahil: " + note + ".");
+    return;
+  }
+
+  if (text.indexOf("calculate") !== -1 || text.indexOf("plus") !== -1 || text.indexOf("minus") !== -1 || text.indexOf("times") !== -1 || text.indexOf("divided by") !== -1) {
+    var mathRes = evalMath(text);
+    if (mathRes !== null) {
+      speak("The answer is " + mathRes + ", Sahil.");
+      return;
+    }
+  }
+
+  if (text.indexOf("joke") !== -1) {
+    speak("Why did the sci-fi character carry a stopwatch? Because time travel always runs late.");
+    return;
+  }
+  if (text.indexOf("fact") !== -1) {
+    speak("Octopuses have three hearts, nine brains, and blue blood.");
+    return;
+  }
+  if (text.indexOf("coin") !== -1) {
+    speak("It landed on " + (Math.random() < 0.5 ? "Heads" : "Tails") + ", Sahil.");
+    return;
+  }
+  if (text.indexOf("dice") !== -1) {
+    speak("You rolled a " + (Math.floor(Math.random() * 6) + 1) + ", Sahil.");
+    return;
+  }
+  if (text.indexOf("timer") !== -1) {
+    var sec = text.match(/(\d+)\s*second/);
+    var min = text.match(/(\d+)\s*minute/);
+    var ms = sec ? parseInt(sec[1], 10) * 1000 : (min ? parseInt(min[1], 10) * 60000 : 10000);
+    var lbl = sec ? (sec[1] + " seconds") : (min ? (min[1] + " minutes") : "10 seconds");
+    speak("Timer set for " + lbl + ", Sahil.");
+    setTimeout(function() {
+      speak("Hey Sahil, your " + lbl + " timer is up!");
+    }, ms);
+    return;
+  }
+
+  autoAnswer(text);
+}
+
+function sahilTap() {
+  answerEl.innerText = "Touched! Starting microphone...";
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    speak("Mic is not supported here, Sahil. Please use the type box below.");
+    return;
+  }
+  try {
+    var rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onstart = function() {
+      answerEl.innerText = 'Listening... Say "Sahil" + your command.';
+    };
+    rec.onresult = function(ev) {
+      var spoken = ev.results[0] && ev.results[0][0] ? String(ev.results[0][0].transcript || "").trim() : "";
+      if (!spoken) return;
+      var low = spoken.toLowerCase();
+      if (low.indexOf(WAKE_WORD) !== -1 || inChat) {
+        inChat = false;
+        runCommand(spoken);
+      }
+    };
+    rec.onerror = function(ev) {
+      answerEl.innerText = "Mic error: " + ev.error + ". You can type in the box below.";
+    };
+    rec.start();
+  } catch (err) {
+    answerEl.innerText = "Mic start failed: " + err.message;
+  }
+}
+
+function sahilType() {
+  runCommand(cmdInput.value);
+}
+
+function sahilSaveKey() {
+  apiKey = apiKeyInput.value.trim();
+  try {
+    if (apiKey) {
+      localStorage.setItem("sahil_v4_key", apiKey);
+      keyNote.innerText = "Gemini API key saved.";
+      speak("Gemini key saved, Sahil.");
+    } else {
+      localStorage.removeItem("sahil_v4_key");
+      keyNote.innerText = "Key removed. Using automatic web answer + Google link.";
+      speak("Gemini key removed, Sahil.");
+    }
+  } catch (e) {}
+}
+</script>
+</body>
+</html>
